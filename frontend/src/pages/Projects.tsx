@@ -12,8 +12,8 @@ import {
   DialogActions,
   TextField,
   LinearProgress,
+  Grid,
 } from '@mui/material';
-import Grid from '@mui/material/Unstable_Grid2';
 import { Add as AddIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
