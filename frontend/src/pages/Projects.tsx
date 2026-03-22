@@ -132,7 +132,7 @@ const Projects: React.FC = () => {
 
       <Grid container spacing={3}>
         {state.projects.map((project) => (
-          <Grid xs={12} md={6} lg={4} key={project.id}>
+          <Grid item xs={12} md={6} lg={4} key={project.id}>
             <Card
               sx={{ 
                 cursor: 'pointer',
