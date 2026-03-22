@@ -4,7 +4,7 @@
   "description": "Backend API for Construction Project Manager",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "db:generate": "prisma generate",

@@ -29,6 +29,19 @@ app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Middleware to ensure DB initialized in Serverless environment
+app.use(async (req, res, next) => {
+  if (!dbInitialized) {
+    try {
+      await initializeDatabase();
+      dbInitialized = true;
+    } catch (error) {
+      console.error('Database initialization failed:', error);
+    }
+  }
+  next();
+});
+
 // Routes
 app.use('/api/projects', projectRoutes);
 app.use('/api/work-items', workItemRoutes);
@@ -89,6 +102,9 @@ const startServer = async () => {
   }
 };
 
-startServer();
+// Only start server if running directly (not required for Vercel)
+if (require.main === module) {
+  startServer();
+}
 
 export default app;
