@@ -50,6 +50,14 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// Root route handler
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Construction Management API is running', 
+    docs: '/api/health' 
+  });
+});
+
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
