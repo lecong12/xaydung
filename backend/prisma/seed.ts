@@ -1,4 +1,4 @@
-import { PrismaClient, ProjectStatus, WorkItemStatus, EquipmentStatus, WorkerStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -26,7 +26,7 @@ async function main() {
       startDate: new Date('2024-01-01'),
       endDate: new Date('2024-12-31'),
       budget: 50000000000, // 50 tỷ VND
-      status: ProjectStatus.IN_PROGRESS
+      status: 'IN_PROGRESS' as any
     }
   });
 
@@ -37,7 +37,7 @@ async function main() {
       startDate: new Date('2024-03-01'),
       endDate: new Date('2025-03-01'),
       budget: 30000000000, // 30 tỷ VND
-      status: ProjectStatus.PLANNING
+      status: 'PLANNING' as any
     }
   });
 
@@ -53,7 +53,7 @@ async function main() {
       unitPrice: 200000,
       startDate: new Date('2024-01-01'),
       endDate: new Date('2024-02-15'),
-      status: WorkItemStatus.IN_PROGRESS
+      status: 'IN_PROGRESS' as any
     }
   });
 
@@ -68,7 +68,7 @@ async function main() {
       unitPrice: 2500000,
       startDate: new Date('2024-02-16'),
       endDate: new Date('2024-03-30'),
-      status: WorkItemStatus.NOT_STARTED
+      status: 'NOT_STARTED' as any
     }
   });
 
@@ -103,7 +103,7 @@ async function main() {
       name: 'Máy xúc Komatsu PC200',
       type: 'may_xuc',
       model: 'PC200-8',
-      status: EquipmentStatus.IN_USE,
+      status: 'IN_USE' as any,
       dailyRate: 2500000,
       lastMaintenance: new Date('2024-01-01'),
       nextMaintenance: new Date('2024-04-01')
@@ -115,7 +115,7 @@ async function main() {
       name: 'Cần cẩu tháp QTZ63',
       type: 'can_cau',
       model: 'QTZ63',
-      status: EquipmentStatus.AVAILABLE,
+      status: 'AVAILABLE' as any,
       dailyRate: 3000000,
       lastMaintenance: new Date('2023-12-15'),
       nextMaintenance: new Date('2024-03-15')
@@ -134,7 +134,7 @@ async function main() {
       phone: '0901234567',
       address: 'Quận Tân Bình, TP.HCM',
       hireDate: new Date('2023-01-15'),
-      status: WorkerStatus.ACTIVE
+      status: 'ACTIVE' as any
     }
   });
 
@@ -149,7 +149,7 @@ async function main() {
       phone: '0907654321',
       address: 'Quận 1, TP.HCM',
       hireDate: new Date('2022-06-01'),
-      status: WorkerStatus.ACTIVE
+      status: 'ACTIVE' as any
     }
   });
 

@@ -1,8 +1,16 @@
 import { Router } from 'express';
+import { 
+  getAllWorkItems, 
+  getWorkItemById, 
+  updateWorkItem, 
+  deleteWorkItem 
+} from '../controllers/workItemController';
 
 const router = Router();
 
-// TODO: Implement work item routes
-router.get('/', (req, res) => res.json({ message: 'Work items route' }));
+router.get('/', getAllWorkItems);
+router.get('/:id', getWorkItemById);
+router.put('/:id', updateWorkItem);
+router.delete('/:id', deleteWorkItem);
 
 export default router;
