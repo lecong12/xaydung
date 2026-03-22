@@ -18,6 +18,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowBack as ArrowBackIcon, Add as AddIcon } from '@mui/icons-material';
 import { useApp } from '../context/AppContext';
 import { projectService } from '../services/api';
+import { format } from 'date-fns';
 
 // Define types locally for now
 interface Project {
@@ -33,7 +34,6 @@ interface Project {
   completionPercentage?: number;
   workItems?: any[];
 }
-import { format } from 'date-fns';
 
 interface TabPanelProps {
   children?: React.ReactNode;
