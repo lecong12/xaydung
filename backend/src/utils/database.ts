@@ -1,19 +1,11 @@
-// Simple database client without Prisma for now
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
+// Using Prisma Client as an adapter for SQLite operations to ensure Vercel compatibility
+import { PrismaClient } from '@prisma/client';
 
-let db: any = null;
+const prisma = new PrismaClient();
 
 export const initializeDatabase = async () => {
-  if (db) return db;
-  
-  db = await open({
-    filename: './dev.db',
-    driver: sqlite3.Database
-  });
-
-  // Create tables based on our schema
-  await db.exec(`
+  // Execute table creation queries individually to ensure compatibility
+  await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -25,7 +17,9 @@ export const initializeDatabase = async () => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
-
+  `);
+  
+  await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS work_items (
       id TEXT PRIMARY KEY,
       project_id TEXT NOT NULL,
@@ -42,7 +36,9 @@ export const initializeDatabase = async () => {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (project_id) REFERENCES projects (id)
     );
-
+  `);
+  
+  await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS materials (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -55,7 +51,9 @@ export const initializeDatabase = async () => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
-
+  `);
+  
+  await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS equipment (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -68,7 +66,9 @@ export const initializeDatabase = async () => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
-
+  `);
+  
+  await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS workers (
       id TEXT PRIMARY KEY,
       employee_code TEXT UNIQUE,
@@ -86,12 +86,23 @@ export const initializeDatabase = async () => {
     );
   `);
 
-  return db;
+  return prisma;
 };
 
 export const getDatabase = () => {
-  if (!db) {
-    throw new Error('Database not initialized. Call initializeDatabase() first.');
-  }
-  return db;
+  // Return an object that mimics the 'sqlite' library interface used in controllers
+  return {
+    all: async (sql: string, params: any[] = []) => {
+      return await prisma.$queryRawUnsafe(sql, ...params);
+    },
+    get: async (sql: string, params: any[] = []) => {
+      const result: any[] = await prisma.$queryRawUnsafe(sql, ...params);
+      return result[0] || undefined;
+    },
+    run: async (sql: string, params: any[] = []) => {
+      const result = await prisma.$executeRawUnsafe(sql, ...params);
+      // Return structure compatible with sqlite driver result ({ changes: number })
+      return { changes: result };
+    }
+  };
 };
