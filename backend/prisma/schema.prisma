@@ -7,12 +7,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model Project {
-  id          String   @id @default(uuid())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   description String?
   startDate   DateTime? @map("start_date")
@@ -28,8 +28,8 @@ model Project {
 }
 
 model WorkItem {
-  id                String   @id @default(uuid())
-  projectId         String   @map("project_id")
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  projectId         String   @map("project_id") @db.ObjectId
   name              String
   description       String?
   unit              String
@@ -52,7 +52,7 @@ model WorkItem {
 }
 
 model Material {
-  id             String   @id @default(uuid())
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
   name           String
   category       String
   unit           String
@@ -69,7 +69,7 @@ model Material {
 }
 
 model Equipment {
-  id              String   @id @default(uuid())
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
   name            String
   type            String
   model           String?
@@ -86,7 +86,7 @@ model Equipment {
 }
 
 model Worker {
-  id           String   @id @default(uuid())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
   employeeCode String   @unique @map("employee_code")
   name         String
   position     String
@@ -108,9 +108,9 @@ model Worker {
 }
 
 model WorkAssignment {
-  id             String   @id @default(uuid())
-  workItemId     String   @map("work_item_id")
-  workerId       String   @map("worker_id")
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  workItemId     String   @map("work_item_id") @db.ObjectId
+  workerId       String   @map("worker_id") @db.ObjectId
   assignedDate   DateTime @map("assigned_date")
   estimatedHours Float    @map("estimated_hours")
   role           String
@@ -123,9 +123,9 @@ model WorkAssignment {
 }
 
 model Attendance {
-  id            String   @id @default(uuid())
-  workerId      String   @map("worker_id")
-  workItemId    String   @map("work_item_id")
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  workerId      String   @map("worker_id") @db.ObjectId
+  workItemId    String   @map("work_item_id") @db.ObjectId
   date          DateTime
   timeIn        String?  @map("time_in")
   timeOut       String?  @map("time_out")
@@ -141,9 +141,9 @@ model Attendance {
 }
 
 model MaterialUsage {
-  id           String   @id @default(uuid())
-  workItemId   String   @map("work_item_id")
-  materialId   String   @map("material_id")
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  workItemId   String   @map("work_item_id") @db.ObjectId
+  materialId   String   @map("material_id") @db.ObjectId
   quantityUsed Float    @map("quantity_used")
   dateUsed     DateTime @map("date_used")
   unitCost     Float    @map("unit_cost")
@@ -157,12 +157,12 @@ model MaterialUsage {
 }
 
 model EquipmentUsage {
-  id         String   @id @default(uuid())
-  workItemId String   @map("work_item_id")
-  equipmentId String  @map("equipment_id")
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  workItemId String   @map("work_item_id") @db.ObjectId
+  equipmentId String  @map("equipment_id") @db.ObjectId
   dateUsed   DateTime @map("date_used")
   hoursUsed  Float    @map("hours_used")
-  operatorId String   @map("operator_id")
+  operatorId String   @map("operator_id") @db.ObjectId
   cost       Float
   notes      String?
   createdAt  DateTime @default(now()) @map("created_at")

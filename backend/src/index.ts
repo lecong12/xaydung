@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-import { initializeDatabase } from './utils/database';
+import { prisma } from './utils/database';
 
 // Import routes
 import projectRoutes from './routes/projects';
@@ -19,28 +19,12 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
-// Initialize Database
-let dbInitialized = false;
-
 // Middleware
 app.use(helmet());
 app.use(cors());
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Middleware to ensure DB initialized in Serverless environment
-app.use(async (req, res, next) => {
-  if (!dbInitialized) {
-    try {
-      await initializeDatabase();
-      dbInitialized = true;
-    } catch (error) {
-      console.error('Database initialization failed:', error);
-    }
-  }
-  next();
-});
 
 // Routes
 app.use('/api/projects', projectRoutes);
@@ -53,11 +37,8 @@ app.use('/api/reports', reportRoutes);
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
-    if (!dbInitialized) {
-      await initializeDatabase();
-      dbInitialized = true;
-    }
-    res.json({ status: 'OK', timestamp: new Date().toISOString(), database: 'Connected' });
+    await prisma.$runCommandRaw({ ping: 1 });
+    res.json({ status: 'OK', timestamp: new Date().toISOString(), database: 'MongoDB Connected' });
   } catch (error) {
     res.status(500).json({ status: 'ERROR', timestamp: new Date().toISOString(), error: 'Database connection failed' });
   }
@@ -88,9 +69,8 @@ app.use('*', (req, res) => {
 // Start server
 const startServer = async () => {
   try {
-    await initializeDatabase();
-    dbInitialized = true;
-    console.log('📚 Database initialized successfully');
+    await prisma.$connect();
+    console.log('📚 MongoDB Connected successfully');
     
     app.listen(port, () => {
       console.log(`🚀 Server running on port ${port}`);

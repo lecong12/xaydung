@@ -1,30 +1,41 @@
 import { Request, Response } from 'express';
-import { getDatabase } from '../utils/database';
-import { v4 as uuidv4 } from 'uuid';
+import { prisma } from '../utils/database';
+import { Project, ProjectStatus } from '@prisma/client';
+
+// Helper to map camelCase Prisma result to snake_case for frontend compatibility
+const mapProjectResponse = (project: any) => ({
+  ...project,
+  start_date: project.startDate,
+  end_date: project.endDate,
+  created_at: project.createdAt,
+  updated_at: project.updatedAt,
+});
 
 // Get all projects
 export const getAllProjects = async (req: Request, res: Response) => {
   try {
-    const db = getDatabase();
-    const projects = await db.all(`
-      SELECT p.*, 
-             COUNT(wi.id) as work_item_count,
-             COALESCE(SUM(wi.design_quantity), 0) as total_design_quantity,
-             COALESCE(SUM(wi.completed_quantity), 0) as total_completed_quantity
-      FROM projects p
-      LEFT JOIN work_items wi ON p.id = wi.project_id
-      GROUP BY p.id
-      ORDER BY p.created_at DESC
-    `);
+    const projects = await prisma.project.findMany({
+      include: {
+        workItems: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
-    // Calculate completion percentage for each project
+    // Calculate stats in JS since Mongo aggregation is complex in simple find
     const projectsWithProgress = projects.map((project: any) => {
-      const completionPercentage = project.total_design_quantity > 0 
-        ? (project.total_completed_quantity / project.total_design_quantity) * 100 
+      const totalDesign = project.workItems.reduce((sum: number, item: any) => sum + item.designQuantity, 0);
+      const totalCompleted = project.workItems.reduce((sum: number, item: any) => sum + item.completedQuantity, 0);
+      const completionPercentage = totalDesign > 0 
+        ? (totalCompleted / totalDesign) * 100 
         : 0;
 
+      // Format snake_case for compatibility
+      const mapped = mapProjectResponse(project);
       return {
-        ...project,
+        ...mapped,
+        work_item_count: project.workItems.length,
+        total_design_quantity: totalDesign,
+        total_completed_quantity: totalCompleted,
         completionPercentage: Math.round(completionPercentage * 100) / 100
       };
     });
@@ -45,27 +56,18 @@ export const createProject = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Project name is required' });
     }
 
-    const db = getDatabase();
-    const projectId = uuidv4();
-    const now = new Date().toISOString();
-
-    await db.run(`
-      INSERT INTO projects (id, name, description, start_date, end_date, budget, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      projectId,
-      name,
-      description || null,
-      startDate || null,
-      endDate || null,
-      budget ? parseFloat(budget) : null,
-      status || 'PLANNING',
-      now,
-      now
-    ]);
-
-    const project = await db.get('SELECT * FROM projects WHERE id = ?', [projectId]);
-    res.status(201).json(project);
+    const project = await prisma.project.create({
+      data: {
+        name,
+        description,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        budget: budget ? parseFloat(budget) : null,
+        status: status as ProjectStatus || ProjectStatus.PLANNING,
+      }
+    });
+    
+    res.status(201).json(mapProjectResponse(project));
   } catch (error) {
     console.error('Error creating project:', error);
     res.status(500).json({ error: 'Failed to create project' });
@@ -76,25 +78,24 @@ export const createProject = async (req: Request, res: Response) => {
 export const getProjectById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
-
-    const project = await db.get('SELECT * FROM projects WHERE id = ?', [id]);
+    const project = await prisma.project.findUnique({
+      where: { id },
+      include: { workItems: true }
+    });
 
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    // Get work items for this project
-    const workItems = await db.all('SELECT * FROM work_items WHERE project_id = ?', [id]);
-
-    // Calculate completion percentage
-    const totalDesignQuantity = workItems.reduce((sum: number, item: any) => sum + item.design_quantity, 0);
-    const totalCompletedQuantity = workItems.reduce((sum: number, item: any) => sum + item.completed_quantity, 0);
+    const totalDesignQuantity = project.workItems.reduce((sum: number, item: any) => sum + item.designQuantity, 0);
+    const totalCompletedQuantity = project.workItems.reduce((sum: number, item: any) => sum + item.completedQuantity, 0);
     const completionPercentage = totalDesignQuantity > 0 ? (totalCompletedQuantity / totalDesignQuantity) * 100 : 0;
 
+    const mappedProject = mapProjectResponse(project);
     const projectWithDetails = {
-      ...project,
-      workItems,
+      ...mappedProject,
+      // Map work items to snake_case too
+      workItems: project.workItems.map((w: any) => ({ ...w, start_date: w.startDate, end_date: w.endDate })),
       completionPercentage: Math.round(completionPercentage * 100) / 100
     };
 
@@ -110,53 +111,27 @@ export const updateProject = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, description, startDate, endDate, budget, status } = req.body;
-    const db = getDatabase();
 
-    // Check if project exists
-    const existingProject = await db.get('SELECT * FROM projects WHERE id = ?', [id]);
-    if (!existingProject) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
+    const updatedProject = await prisma.project.update({
+      where: { id },
+      data: {
+        name,
+        description,
+        // Handle undefined vs null carefully
+        ...(startDate !== undefined && { startDate: startDate ? new Date(startDate) : null }),
+        ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
+        ...(budget !== undefined && { budget: budget ? parseFloat(budget) : null }),
+        ...(status !== undefined && { status: status as ProjectStatus }),
+      }
+    });
 
-    // Build update query
-    const updates: string[] = [];
-    const values: any[] = [];
-
-    if (name !== undefined) {
-      updates.push('name = ?');
-      values.push(name);
-    }
-    if (description !== undefined) {
-      updates.push('description = ?');
-      values.push(description);
-    }
-    if (startDate !== undefined) {
-      updates.push('start_date = ?');
-      values.push(startDate);
-    }
-    if (endDate !== undefined) {
-      updates.push('end_date = ?');
-      values.push(endDate);
-    }
-    if (budget !== undefined) {
-      updates.push('budget = ?');
-      values.push(budget ? parseFloat(budget) : null);
-    }
-    if (status !== undefined) {
-      updates.push('status = ?');
-      values.push(status);
-    }
-
-    updates.push('updated_at = ?');
-    values.push(new Date().toISOString());
-    values.push(id);
-
-    await db.run(`UPDATE projects SET ${updates.join(', ')} WHERE id = ?`, values);
-
-    const updatedProject = await db.get('SELECT * FROM projects WHERE id = ?', [id]);
-    res.json(updatedProject);
+    res.json(mapProjectResponse(updatedProject));
   } catch (error) {
     console.error('Error updating project:', error);
+    // Prisma error P2025 means record not found
+    if ((error as any).code === 'P2025') {
+      return res.status(404).json({ error: 'Project not found' });
+    }
     res.status(500).json({ error: 'Failed to update project' });
   }
 };
@@ -165,17 +140,16 @@ export const updateProject = async (req: Request, res: Response) => {
 export const deleteProject = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
-
-    const result = await db.run('DELETE FROM projects WHERE id = ?', [id]);
-    
-    if (result.changes === 0) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
+    await prisma.project.delete({
+      where: { id }
+    });
 
     res.status(204).send();
   } catch (error) {
     console.error('Error deleting project:', error);
+    if ((error as any).code === 'P2025') {
+      return res.status(404).json({ error: 'Project not found' });
+    }
     res.status(500).json({ error: 'Failed to delete project' });
   }
 };
@@ -184,10 +158,12 @@ export const deleteProject = async (req: Request, res: Response) => {
 export const getProjectWorkItems = async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const db = getDatabase();
-
-    const workItems = await db.all('SELECT * FROM work_items WHERE project_id = ? ORDER BY created_at ASC', [projectId]);
-    res.json(workItems);
+    const workItems = await prisma.workItem.findMany({
+      where: { projectId },
+      orderBy: { createdAt: 'asc' }
+    });
+    
+    res.json(workItems.map(w => ({ ...w, start_date: w.startDate, end_date: w.endDate })));
   } catch (error) {
     console.error('Error fetching work items:', error);
     res.status(500).json({ error: 'Failed to fetch work items' });
@@ -206,29 +182,20 @@ export const createProjectWorkItem = async (req: Request, res: Response) => {
       });
     }
 
-    const db = getDatabase();
-    const workItemId = uuidv4();
-    const now = new Date().toISOString();
+    const workItem = await prisma.workItem.create({
+      data: {
+        projectId,
+        name,
+        description,
+        unit,
+        designQuantity: parseFloat(designQuantity),
+        unitPrice: parseFloat(unitPrice),
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+      }
+    });
 
-    await db.run(`
-      INSERT INTO work_items (id, project_id, name, description, unit, design_quantity, unit_price, start_date, end_date, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      workItemId,
-      projectId,
-      name,
-      description || null,
-      unit,
-      parseFloat(designQuantity),
-      parseFloat(unitPrice),
-      startDate || null,
-      endDate || null,
-      now,
-      now
-    ]);
-
-    const workItem = await db.get('SELECT * FROM work_items WHERE id = ?', [workItemId]);
-    res.status(201).json(workItem);
+    res.status(201).json({ ...workItem, start_date: workItem.startDate, end_date: workItem.endDate });
   } catch (error) {
     console.error('Error creating work item:', error);
     res.status(500).json({ error: 'Failed to create work item' });
