@@ -138,7 +138,7 @@ const ProjectDetail: React.FC = () => {
 
       {/* Project Overview */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={8}>
+        <Grid xs={12} md={8}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -149,7 +149,7 @@ const ProjectDetail: React.FC = () => {
               </Typography>
               
               <Grid container spacing={2}>
-                <Grid item xs={6}>
+                <Grid xs={6}>
                   <Typography variant="body2" color="text.secondary">
                     Ngày bắt đầu
                   </Typography>
@@ -157,7 +157,7 @@ const ProjectDetail: React.FC = () => {
                     {project.start_date ? format(new Date(project.start_date), 'dd/MM/yyyy') : 'Chưa xác định'}
                   </Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid xs={6}>
                   <Typography variant="body2" color="text.secondary">
                     Ngày kết thúc
                   </Typography>
@@ -165,7 +165,7 @@ const ProjectDetail: React.FC = () => {
                     {project.end_date ? format(new Date(project.end_date), 'dd/MM/yyyy') : 'Chưa xác định'}
                   </Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid xs={6}>
                   <Typography variant="body2" color="text.secondary">
                     Ngân sách
                   </Typography>
@@ -173,7 +173,7 @@ const ProjectDetail: React.FC = () => {
                     {project.budget ? formatCurrency(project.budget) : 'Chưa xác định'}
                   </Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid xs={6}>
                   <Typography variant="body2" color="text.secondary">
                     Số hạng mục
                   </Typography>
@@ -186,7 +186,7 @@ const ProjectDetail: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} md={4}>
+        <Grid xs={12} md={4}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
