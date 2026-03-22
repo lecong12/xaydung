@@ -8,9 +8,13 @@ export default defineConfig({
     outDir: 'build',
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor': ['react', 'react-dom', 'react-router-dom', 'axios', 'date-fns'],
-          'mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@mui') || id.includes('@emotion')) {
+              return 'mui';
+            }
+            return 'vendor';
+          }
         },
       },
     },
