@@ -5,6 +5,19 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
+  // Clean up database (delete in reverse dependency order)
+  console.log('🧹 Cleaning existing data...');
+  await prisma.equipmentUsage.deleteMany();
+  await prisma.materialUsage.deleteMany();
+  await prisma.attendance.deleteMany();
+  await prisma.workAssignment.deleteMany();
+  
+  await prisma.workItem.deleteMany();
+  await prisma.project.deleteMany();
+  await prisma.worker.deleteMany();
+  await prisma.material.deleteMany();
+  await prisma.equipment.deleteMany();
+
   // Create sample projects
   const project1 = await prisma.project.create({
     data: {
