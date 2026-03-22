@@ -54,7 +54,9 @@ const Dashboard: React.FC = () => {
 
       <Grid container spacing={3}>
         {stats.map((stat, index) => (
-          <Grid dContent>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
+            <Card>
+              <CardContent>
                 <Box display="flex" alignItems="center">
                   <Box sx={{ color: stat.color, mr: 2 }}>
                     {stat.icon}
@@ -76,17 +78,21 @@ const Dashboard: React.FC = () => {
 
       <Grid container spacing={3} sx={{ mt: 3 }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Pax{pography variant="h6" gutterBottom>
-             ngypography>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Dự án gần đây
+            </Typography>
             <Typography color="text.secondary">
               Chưa có dữ liệu
             </Typography>
           </Paper>
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-            yah6" gutterBottom>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
               Hoạt động gần đây
-            yrxt.secondary">
+            </Typography>
+            <Typography color="text.secondary">
               Chưa có dữ liệu
             </Typography>
           </Paper>
