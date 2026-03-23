@@ -1,0 +1,19 @@
+# Ignore system files
+.git
+.gitignore
+.env
+node_modules
+
+# Ignore backend source code
+backend/
+
+# Ignore frontend source code (only upload build assets if needed)
+frontend/src/
+frontend/public/
+
+# Ignore other specific files
+*.ts
+*.tsx
+*.json
+*.lock
+*.md
