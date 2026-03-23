@@ -1,16 +1,11 @@
 {
   "version": 2,
   "builds": [
-    { 
-      "src": "src/index.ts",  // or "index.ts" if that's your entry point
+    {
+      "src": "src/index.ts",
       "use": "@vercel/node",
       "config": { "typescript": true }
     }
   ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "src/index.ts" // or "index.ts" if that's your entry point
-    }
-  ]
+  "routes": []
 }
